@@ -45,7 +45,7 @@ struct HuffmanNodeGPU
     __host__ __device__ bool is_leaf() const { return left == -1 && right == -1; }
 };
 
-// GPU frequency counting using sort + reduce_by_key
+// Simple GPU frequency counting using sort + reduce_by_key
 template <typename T>
 void cudaFrequencyCount(const thrust::device_vector<T> &data,
                         thrust::device_vector<T> &unique_values,
@@ -82,7 +82,7 @@ void cudaFrequencyCount(const thrust::device_vector<T> &data,
     thrust::copy(thrust::device, temp_counts.begin(), temp_counts.begin() + unique_count, frequencies.begin());
 }
 
-// CPU-based Huffman tree construction
+// Simple CPU-based Huffman tree construction
 template <typename T>
 void buildHuffmanTree(const thrust::device_vector<T> &symbols,
                       const thrust::device_vector<uint32_t> &frequencies,
@@ -234,7 +234,7 @@ __global__ void packBitsKernel(const T *data, size_t data_size,
 
 // Main CUDA compression class
 template <typename T>
-class CudaHuffmanZstdCompressor
+class SimpleCudaHuffmanZstdCompressor
 {
 public:
     struct CompressionResult
@@ -452,10 +452,10 @@ public:
 
 // Convenience functions
 template <typename T>
-typename CudaHuffmanZstdCompressor<T>::CompressionResult
+typename SimpleCudaHuffmanZstdCompressor<T>::CompressionResult
 cudaHuffmanZstdCompress(const std::vector<T> &data, int zstd_level = 3)
 {
-    CudaHuffmanZstdCompressor<T> compressor;
+    SimpleCudaHuffmanZstdCompressor<T> compressor;
     return compressor.compress(data, zstd_level);
 }
 
@@ -465,6 +465,54 @@ std::vector<T> cudaHuffmanZstdDecompress(const std::vector<uint8_t> &compressed_
                                          size_t num_elements,
                                          size_t original_bitstream_size)
 {
-    CudaHuffmanZstdCompressor<T> compressor;
+    SimpleCudaHuffmanZstdCompressor<T> compressor;
     return compressor.decompress(compressed_data, code_table, num_elements, original_bitstream_size);
 }
+
+// // Test function
+// void testCompression()
+// {
+//     std::vector<int> test_data = {1, 2, 3, 1, 2, 1, 4, 5, 1, 2, 3, 3, 3};
+
+//     std::cout << "Original data size: " << test_data.size() << " elements\n";
+
+//     try
+//     {
+//         auto result = cudaHuffmanZstdCompress(test_data, 3);
+
+//         std::cout << "Compressed size: " << result.compressed_data.size() << " bytes\n";
+//         std::cout << "Bitstream size: " << result.original_bitstream_size << " bytes\n";
+//         std::cout << "Code table size: " << result.code_table.size() << " symbols\n";
+
+//         // Print code table
+//         for (const auto &[symbol, code_len] : result.code_table)
+//         {
+//             std::cout << "Symbol " << symbol << ": code=" << code_len.first
+//                       << ", length=" << code_len.second << "\n";
+//         }
+
+//         auto decompressed = cudaHuffmanZstdDecompress(
+//             result.compressed_data,
+//             result.code_table,
+//             result.num_elements,
+//             result.original_bitstream_size);
+
+//         bool success = (test_data == decompressed);
+//         std::cout << "Decompression successful: " << (success ? "YES" : "NO") << "\n";
+
+//         if (!success)
+//         {
+//             std::cout << "Original:     ";
+//             for (int x : test_data)
+//                 std::cout << x << " ";
+//             std::cout << "\nDecompressed: ";
+//             for (int x : decompressed)
+//                 std::cout << x << " ";
+//             std::cout << "\n";
+//         }
+//     }
+//     catch (const std::exception &e)
+//     {
+//         std::cout << "Error: " << e.what() << "\n";
+//     }
+// }
