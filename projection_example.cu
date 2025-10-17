@@ -246,7 +246,6 @@ void Run()
     }
     printf("# Active frequency edits: %zu\n", num_active_freq);
     printf("# Active spatial edits: %zu\n", num_active_spatial);
-    printf("Extra storage: %zu bytes\n", extra_storage);
 
     auto compression_time = std::chrono::duration_cast<std::chrono::milliseconds>((end_time - mid_time) * 3 + mid_time - start_time);
     auto decompression_time = std::chrono::duration_cast<std::chrono::milliseconds>((end_time - mid_time) * 2);
